@@ -27,7 +27,7 @@ use js::utils::{
     VariableNameGenerator,
 };
 
-use std::collections::{HashMap, HashSet};
+use fxhash::{FxHashMap, FxHashSet};
 
 /*#[derive(Debug, Clone, PartialEq, Eq)]
 enum Elem<'a> {
@@ -217,9 +217,9 @@ pub fn minify(source: &str) -> String {
 // TODO: No scope handling or anything. Might be nice as a second step to add it...
 fn get_variables_name<'a>(
     tokens: &'a Tokens<'a>,
-) -> (HashSet<&'a str>, HashMap<&'a str, (usize, usize)>) {
-    let mut ret = HashSet::new();
-    let mut variables = HashMap::new();
+) -> (FxHashSet<&'a str>, FxHashMap<&'a str, (usize, usize)>) {
+    let mut ret = FxHashSet::default();
+    let mut variables = FxHashMap::default();
     let mut pos = 0;
 
     while pos < tokens.len() {
@@ -252,8 +252,10 @@ fn aggregate_strings_inner<'a, 'b: 'a>(
     let mut to_replace: Vec<(usize, usize)> = Vec::new();
 
     for (var_name, positions) in {
-        let mut strs: HashMap<&Token, Vec<usize>> = HashMap::with_capacity(1000);
-        let mut validated: HashMap<&Token, String> = HashMap::with_capacity(100);
+        let mut strs: FxHashMap<&Token, Vec<usize>> =
+            FxHashMap::with_capacity_and_hasher(1000, Default::default());
+        let mut validated: FxHashMap<&Token, String> =
+            FxHashMap::with_capacity_and_hasher(100, Default::default());
 
         let mut var_gen = VariableNameGenerator::new(Some("r_"), 2);
         let mut next_name = var_gen.to_string();
@@ -416,15 +418,16 @@ fn aggregate_strings_into_array_inner<'a, 'b: 'a, T: Fn(&Tokens<'a>, usize) -> b
     let mut to_replace = Vec::with_capacity(100);
 
     {
-        let mut to_ignore = HashSet::new();
+        let mut to_ignore = FxHashSet::default();
         // key: the token string
         // value: (position in the array, positions in the tokens list, need creation)
-        let mut strs: HashMap<&str, (usize, Vec<usize>, bool)> = HashMap::with_capacity(1000);
+        let mut strs: FxHashMap<&str, (usize, Vec<usize>, bool)> =
+            FxHashMap::with_capacity_and_hasher(1000, Default::default());
         let (current_array_values, need_recreate, mut end_bracket) = match get_array(&tokens, array_name) {
             Some((s, p)) => (s, false, p),
             None => (Vec::new(), true, 0),
         };
-        let mut validated: HashSet<&str> = HashSet::new();
+        let mut validated: FxHashSet<&str> = FxHashSet::default();
 
         let mut array_pos = 0;
         let mut array_pos_str;
